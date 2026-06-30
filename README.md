@@ -16,7 +16,7 @@ During floods, earthquakes, wildfires, cyclones, and heatwaves, people often ask
 
 DisasterAssist AI turns those scattered needs into coordinated specialist workflows. A planner agent routes each request to the right worker agent, then the backend returns a practical response through a mobile-style dashboard.
 
-## Highlights For Judges
+## Highlights
 
 - **Multi-agent architecture:** planner coordinator plus specialist agents for triage, hospitals, shelters, resources, weather, damage, information, and checklists.
 - **Mobile-first UI:** professional white/blue emergency operations interface with red reserved for active alerts and emergency actions.
@@ -93,7 +93,7 @@ The checklist workflow personalizes emergency kit suggestions based on hazard ty
 
 ### Backend Health Visibility
 
-The UI shows whether the FastAPI backend is online, making demos easier to debug and more transparent for judges.
+The UI shows whether the FastAPI backend is online
 
 ## Project Structure
 
@@ -247,5 +247,5 @@ Production hardening roadmap:
 
 DisasterAssist AI demonstrates how agentic AI can support emergency decision-making without pretending to replace authorities. The system focuses on clear triage, resource discovery, hazard interpretation, and preparedness guidance through a deployable full-stack prototype.
 
-The project is designed to be reliable in a judging environment: it can run with or without external AI credentials, exposes backend health clearly, and uses seeded local data for repeatable demos.
 
+ THANKYOU :)
