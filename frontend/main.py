@@ -34,6 +34,10 @@ def init_state() -> None:
 
 init_state()
 
+query_tab = st.query_params.get("tab")
+if query_tab in {"Home", "Chat", "Emergency", "Vision", "Checklist"}:
+    st.session_state.current_tab = query_tab
+
 custom_css = """
 <style>
     :root {
@@ -52,9 +56,15 @@ custom_css = """
     }
 
     .stApp {
-        background: var(--bg);
+        background: linear-gradient(135deg, #dcecff 0%, #f7fbff 45%, #eef6ff 100%);
         color: var(--ink);
         font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        min-height: 100vh;
+        overflow: hidden;
+    }
+
+    html, body, [data-testid="stAppViewContainer"] {
+        overflow: hidden;
     }
 
     section[data-testid="stSidebar"] {
@@ -62,9 +72,31 @@ custom_css = """
     }
 
     .main .block-container {
-        max-width: 460px;
-        padding: 1.25rem 1rem 6.5rem !important;
-        margin: 0 auto;
+        width: min(390px, calc(100vw - 18px));
+        max-width: 390px;
+        height: min(812px, calc(100vh - 20px));
+        max-height: 812px;
+        padding: 14px 14px 86px !important;
+        margin: 10px auto;
+        background: #ffffff;
+        border: 10px solid #102033;
+        border-radius: 34px;
+        box-shadow: 0 24px 70px rgba(8, 59, 130, 0.22);
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: thin;
+        position: relative;
+    }
+
+    .main .block-container::before {
+        content: "";
+        display: block;
+        width: 108px;
+        height: 5px;
+        border-radius: 999px;
+        background: #102033;
+        opacity: 0.92;
+        margin: 0 auto 12px;
     }
 
     header[data-testid="stHeader"] {
@@ -72,24 +104,24 @@ custom_css = """
     }
 
     .app-shell {
-        background: var(--card);
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
         border: 1px solid var(--line);
-        border-radius: 18px;
-        padding: 18px;
-        box-shadow: 0 16px 36px rgba(8, 59, 130, 0.10);
-        margin-bottom: 12px;
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 12px 26px rgba(8, 59, 130, 0.10);
+        margin-bottom: 10px;
     }
 
     .topbar {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 12px;
+        gap: 8px;
+        margin-bottom: 10px;
     }
 
     .brand-title {
-        font-size: 1.45rem;
+        font-size: 1.24rem;
         font-weight: 850;
         letter-spacing: 0;
         color: var(--blue-dark);
@@ -99,13 +131,14 @@ custom_css = """
     .brand-subtitle {
         margin: 2px 0 0 0;
         color: var(--muted);
-        font-size: 0.86rem;
+        font-size: 0.76rem;
+        line-height: 1.25;
     }
 
     .status-pill {
         border-radius: 999px;
-        padding: 7px 11px;
-        font-size: 0.75rem;
+        padding: 6px 8px;
+        font-size: 0.67rem;
         font-weight: 750;
         white-space: nowrap;
     }
@@ -123,35 +156,35 @@ custom_css = """
     .mobile-card {
         background: var(--card);
         border: 1px solid var(--line);
-        border-radius: 16px;
-        padding: 16px;
-        margin: 12px 0;
-        box-shadow: 0 10px 22px rgba(16, 32, 51, 0.06);
+        border-radius: 14px;
+        padding: 12px;
+        margin: 9px 0;
+        box-shadow: 0 8px 18px rgba(16, 32, 51, 0.05);
     }
 
     .metric-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin: 12px 0;
+        gap: 8px;
+        margin: 8px 0 0;
     }
 
     .metric-tile {
         background: var(--blue-soft);
         border: 1px solid #cfe5ff;
-        border-radius: 14px;
-        padding: 12px;
+        border-radius: 12px;
+        padding: 9px;
     }
 
     .metric-label {
         color: var(--muted);
-        font-size: 0.76rem;
-        margin-bottom: 4px;
+        font-size: 0.68rem;
+        margin-bottom: 3px;
     }
 
     .metric-value {
         color: var(--ink);
-        font-size: 1rem;
+        font-size: 0.82rem;
         font-weight: 800;
     }
 
@@ -159,44 +192,77 @@ custom_css = """
         background: var(--red-soft);
         border: 1px solid #fecaca;
         border-left: 6px solid var(--red);
-        border-radius: 16px;
-        padding: 14px;
-        margin: 12px 0;
+        border-radius: 14px;
+        padding: 11px;
+        margin: 9px 0;
         color: #7f1d1d;
     }
 
     .section-title {
         color: var(--ink);
-        font-size: 1.15rem;
+        font-size: 1rem;
         font-weight: 820;
         margin: 0 0 6px 0;
     }
 
     .section-copy {
         color: var(--muted);
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         margin: 0;
     }
 
     .bottom-nav {
         position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
+        bottom: max(18px, calc((100vh - 812px) / 2 + 18px));
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(370px, calc(100vw - 38px));
         background: #ffffff;
         border-top: 1px solid var(--line);
+        border-left: 1px solid var(--line);
+        border-right: 1px solid var(--line);
+        border-radius: 0 0 22px 22px;
         box-shadow: 0 -12px 30px rgba(16, 32, 51, 0.08);
-        padding: 8px 10px 12px;
+        padding: 6px 8px 8px;
         z-index: 9999;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 5px;
+    }
+
+    .bottom-nav a {
+        display: block;
+        text-align: center;
+        text-decoration: none;
+        border-radius: 11px;
+        padding: 8px 4px;
+        color: var(--blue-dark);
+        font-size: 0.72rem;
+        font-weight: 800;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+
+    .bottom-nav a.active {
+        background: var(--blue);
+        color: #ffffff;
+        border-color: var(--blue);
+    }
+
+    .bottom-nav a.alert.active {
+        background: var(--red);
+        border-color: var(--red);
     }
 
     .stButton > button {
-        border-radius: 12px;
+        border-radius: 10px;
         border: 1px solid #b9d6ff;
         background: #ffffff;
         color: var(--blue-dark);
         font-weight: 760;
-        min-height: 42px;
+        min-height: 36px;
+        padding: 0.25rem 0.4rem;
+        font-size: 0.78rem;
     }
 
     .stButton > button:hover {
@@ -225,8 +291,44 @@ custom_css = """
     }
 
     [data-testid="stDataFrame"], [data-testid="stTable"] {
-        border-radius: 14px;
+        border-radius: 12px;
         overflow: hidden;
+    }
+
+    div[data-testid="stExpander"] {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        box-shadow: none;
+    }
+
+    div[data-testid="stVerticalBlock"] {
+        gap: 0.5rem;
+    }
+
+    div[data-testid="stHorizontalBlock"] {
+        gap: 0.35rem;
+    }
+
+    iframe {
+        border-radius: 12px;
+    }
+
+    @media (max-height: 720px) {
+        .main .block-container {
+            height: calc(100vh - 12px);
+            margin-top: 6px;
+            margin-bottom: 6px;
+            border-width: 8px;
+            border-radius: 28px;
+        }
+
+        .bottom-nav {
+            bottom: 10px;
+        }
+
+        .app-shell {
+            padding: 12px;
+        }
     }
 </style>
 """
@@ -378,11 +480,11 @@ if current_tab == "Home":
     ]
 
     with sub_tab1:
-        st.map(pd.DataFrame({"lat": [s["Lat"] for s in shelters], "lon": [s["Lon"] for s in shelters]}))
-        st.dataframe(pd.DataFrame(shelters), use_container_width=True, hide_index=True)
+        st.map(pd.DataFrame({"lat": [s["Lat"] for s in shelters], "lon": [s["Lon"] for s in shelters]}), height=210)
+        st.dataframe(pd.DataFrame(shelters), use_container_width=True, hide_index=True, height=165)
 
     with sub_tab2:
-        st.dataframe(pd.DataFrame(hospitals), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(hospitals), use_container_width=True, hide_index=True, height=210)
 
     with sub_tab3:
         health_label = "Connected" if st.session_state.backend_status else "Offline"
@@ -407,9 +509,12 @@ elif current_tab == "Chat":
             with st.chat_message(chat["role"]):
                 st.write(chat["content"])
 
-        if user_prompt := st.chat_input("Ask DisasterAssist..."):
-            st.session_state.chat_history.append({"role": "user", "content": user_prompt})
-            st.rerun()
+        with st.form("chat_prompt_form", clear_on_submit=True):
+            user_prompt = st.text_input("Message", placeholder="Ask DisasterAssist...")
+            send_prompt = st.form_submit_button("Send")
+            if send_prompt and user_prompt.strip():
+                st.session_state.chat_history.append({"role": "user", "content": user_prompt.strip()})
+                st.rerun()
 
     with chat_tab2:
         if not st.session_state.chat_history:
@@ -514,32 +619,21 @@ elif current_tab == "Checklist":
             st.write(api_data["response"])
 
 
-def nav_label(name: str) -> str:
-    return f"* {name}" if st.session_state.current_tab == name else name
+def nav_item(tab_name: str, label: str, extra_class: str = "") -> str:
+    active = "active" if st.session_state.current_tab == tab_name else ""
+    classes = " ".join(part for part in [active, extra_class] if part)
+    return f'<a class="{classes}" href="?tab={tab_name}" target="_self">{label}</a>'
 
 
-st.markdown("<div class='bottom-nav'>", unsafe_allow_html=True)
-nav_col1, nav_col2, nav_col3, nav_col4, nav_col5 = st.columns(5)
-
-with nav_col1:
-    if st.button(nav_label("Home"), key="nav_home", use_container_width=True):
-        st.session_state.current_tab = "Home"
-        st.rerun()
-with nav_col2:
-    if st.button(nav_label("Chat"), key="nav_chat", use_container_width=True):
-        st.session_state.current_tab = "Chat"
-        st.rerun()
-with nav_col3:
-    if st.button(nav_label("Alert"), key="nav_emergency", use_container_width=True):
-        st.session_state.current_tab = "Emergency"
-        st.rerun()
-with nav_col4:
-    if st.button(nav_label("Scan"), key="nav_vision", use_container_width=True):
-        st.session_state.current_tab = "Vision"
-        st.rerun()
-with nav_col5:
-    if st.button(nav_label("Kit"), key="nav_checklist", use_container_width=True):
-        st.session_state.current_tab = "Checklist"
-        st.rerun()
-
-st.markdown("</div>", unsafe_allow_html=True)
+st.markdown(
+    f"""
+    <div class="bottom-nav">
+        {nav_item("Home", "Home")}
+        {nav_item("Chat", "Chat")}
+        {nav_item("Emergency", "Alert", "alert")}
+        {nav_item("Vision", "Scan")}
+        {nav_item("Checklist", "Kit")}
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
