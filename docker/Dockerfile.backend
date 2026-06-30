@@ -1,0 +1,39 @@
+# Use official stable Python 3.12 slim runtime
+FROM python:3.12-slim
+
+# Install system dependencies (curl for healthchecks)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency configs
+COPY requirements.txt .
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy source code files
+COPY backend/ ./backend/
+COPY config/ ./config/
+COPY database/ ./database/
+COPY agents/ ./agents/
+COPY tools/ ./tools/
+
+# Expose API port
+EXPOSE 8000
+
+# Set Python path
+ENV PYTHONPATH=/app
+
+# Enforce pure python implementation of protobuf to bypass any cross-platform upb compile warnings
+ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+
+# Production container healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/api/health || exit 1
+
+# Launch ASGI Server
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,0 +1,66 @@
+services:
+  # 1. FastAPI Gateway & Multi-Agent ADK Runner
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: disaster_assist_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite:////app/data/database.db
+    volumes:
+      - disaster_db_volume:/app/data
+      # Bind mount upload folder to persist damage images locally
+      - ./database/uploads:/app/database/uploads
+    depends_on:
+      - mcp_server
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+
+  # 2. Streamlit Dashboard User Interface
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: disaster_assist_frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://backend:8000/api
+    depends_on:
+      - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+
+  # 3. FastMCP Server Microservice
+  mcp_server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.mcp
+    container_name: disaster_assist_mcp
+    environment:
+      - DATABASE_URL=sqlite:////app/data/database.db
+    volumes:
+      - disaster_db_volume:/app/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+
+volumes:
+  # Persistent storage for SQLite database files
+  disaster_db_volume:
+    name: disaster_assist_db_volume
